@@ -1,0 +1,50 @@
+TEMA PROTOCOALE DE COMUNICATII - PETRE ALEXANDRA 315CB
+
+FEREASTRA GLISANTA
+
+STRUCTURA PACHETE:
+---Fiecare pachet trimis in payload-ul mesajului contine:
+    *number = numarul pachetului
+    *checksum = verificarea daca pachetul este corupt sau nu
+    *bytes = numarul de bytes pe care ii va scrie in functie de payload
+    *count = numarul de cadre ale fisierului de intrare
+    *payload = mesajul efectiv 
+
+SEND:
+  La inceput am calculat dimensiunea ferestrei. Am am calculat in functie de
+dimensiunea fisierului numarul de cadre de trimis (number_seq).
+Pentru dimensiunea ferestrei se alegea minimul dintre numarul de cadre si
+fereastra calculata anterior (pt cazul in care fereastra era mai mare decat
+numarul de cadre).
+  Se trimite prima fereastra cu mesaje, iar in primul mesaj trimis se gaseste
+numele fisierului.Dupa urmeaza un numar de (window - 1) mesaje trimise.
+
+  Dupa trimiterea primelor mesajelor, daca din fisier se mai poate citi pana la
+numarul de cadre, se vor trimite restul mesajelor. Si in acelasi timp se primeste
+ACK de la mesajele trimise. Am folosit un vector de ack-uri in care marchez daca
+s-au primit ack-urile mesajelor trimise, daca ack[numar pachet] nu este 1, atunci
+s-a pierdut si se retrimite. Am folosit si un vector de mesaje (msg_sent),
+in care am salvat mesajele trimise, pentru a le retransmite in cazul in care sunt
+pierdute sau corupte.
+
+  La final am trimis 2 mesaje in plus, pentru ca recv nu apuca sa scrie tot
+continutul mesajelor.
+
+
+RECV:
+
+  Am creat un fisier temporar pe care l-am redenumit atunci cand primesc primul
+mesaj, cel cu numele fisierului. Am creat un vector de ack-uri, care are toate
+campurile initial 0 si care se actualizeaza in functie de primirea mesajelor -
+se pune 1 pe pozitia numarului pachetului. ack[numar pachet] = 1 (daca este primit
+in ordine). Variabila contor numara ce pachete au fost scirse corect si in
+ordine in fisier. Daca contor a ajuns la numarul de cadre + 1 ( pentru ca trimit
+la inceput numele fisierului ) atunci se opreste.
+  --La fiecare pachet primit, se calculeaza checksum si daca aceasta suma este
+egala cu suma trimisa in pachet, pachetul nu este corupt. Daca este corupt
+programul il considera ca si cand ar fi pierdut.
+  --Continutul pachetelor se scrie in fisier in ordine. Pentru pachetele primite
+dar care nu sunt in ordine pentru ca s-a pierdut unul sau mai multe inainte,
+se trimit ack-uri dar nu se scriu in fisier.
+
+  La final se primesc cele 2 mesaje finale trimise si se trimite ack.
